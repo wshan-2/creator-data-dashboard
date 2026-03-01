@@ -74,7 +74,7 @@
       <div class="report-grid">
         <el-alert 
           v-if="aiInsightText"
-          :title="`💡 ${creatorInfo.niche}赛道专属 AI 诊断结论：`" 
+          :title="`💡 ${creatorInfo.niche}赛道专属诊断结论：`" 
           :description="aiInsightText" 
           type="success" 
           show-icon 
@@ -189,7 +189,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dataDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="generateReport">深度推演图表 🚀</el-button>
+        <el-button type="primary" @click="generateReport">深度推演图表</el-button>
       </template>
     </el-dialog>
   </div>
@@ -202,6 +202,7 @@ import { DataAnalysis, DataLine, PieChart, Money, EditPen, User, Download, Back 
 import * as echarts from 'echarts'
 import html2canvas from 'html2canvas'
 
+// 状态管理
 const currentStep = ref('onboarding')
 const currentMode = ref('')
 const dataDialogVisible = ref(false)
@@ -212,14 +213,14 @@ const aiInsightText = ref('')
 
 const creatorInfo = reactive({ name: '', niche: '' })
 
-// 💡 彻底清空默认假数据，全部初始化为 null
+// 表单数据初始化结构
 const formData = reactive({
   single: { views: null, fiveSecRate: null, finishRate: null, likes: null, comments: null, shares: null, saves: null },
   account: { femaleRatio: null, youngRatio: null, tier1Ratio: null, minViews: null, maxViews: null },
   commercial: { baseCpm: null, targetViews: null, ctr: null, aov: null }
 })
 
-// ================= 赛道专属预设库与文案库 =================
+// 垂直赛道行业标准预设配置字典
 const nicheConfig = {
   '科技数码': {
     single: [ { label: '💻 硬核万粉爆款', data: { views: 350000, fiveSecRate: 58, finishRate: 35, likes: 12000, comments: 2500, shares: 6000, saves: 15000 } } ],
@@ -243,13 +244,13 @@ const nicheConfig = {
   }
 }
 
-// 动态计算当前应展示的预设按钮
+// 动态计算适用的预设模板
 const currentPresets = computed(() => {
   if (!creatorInfo.niche || !nicheConfig[creatorInfo.niche]) return []
   return nicheConfig[creatorInfo.niche][currentMode.value] || []
 })
 
-// 一键应用预设数据
+// 应用模板数据至当前表单状态
 const applyPreset = (presetData) => {
   Object.keys(presetData).forEach(key => {
     formData[currentMode.value][key] = presetData[key]
@@ -257,12 +258,12 @@ const applyPreset = (presetData) => {
   ElMessage.success('已自动代入行业参考数据')
 }
 
-// 清空当前表单
+// 清除表单状态
 const clearForm = () => {
   Object.keys(formData[currentMode.value]).forEach(key => { formData[currentMode.value][key] = null })
 }
 
-// ================= 持久化逻辑 =================
+// 本地存储状态同步与初始化挂载
 onMounted(() => {
   const savedProfile = localStorage.getItem('vlog_creator')
   if (savedProfile) {
@@ -273,6 +274,7 @@ onMounted(() => {
   if (savedData) Object.assign(formData, JSON.parse(savedData))
 })
 
+// 监听状态变化以持久化存储
 watch([creatorInfo, formData], () => {
   localStorage.setItem('vlog_creator', JSON.stringify(creatorInfo))
   localStorage.setItem('vlog_data', JSON.stringify(formData))
@@ -282,60 +284,61 @@ const enterWorkspace = () => { currentStep.value = 'home'; ElMessage.success(`�
 
 const openDataDialog = (mode) => {
   currentMode.value = mode
-  dialogTitle.value = mode === 'single' ? '📊 录入单篇数据' : mode === 'account' ? '👥 录入大盘画像' : '💰 录入商业变现参数'
+  dialogTitle.value = mode === 'single' ? '录入单篇数据' : mode === 'account' ? '录入大盘画像' : '录入商业变现参数'
   dataDialogVisible.value = true
 }
 
-// ================= 🧠 千人千面智能诊断引擎 =================
+// 根据垂直类目与当前数据生成结构化报告文本
 const generateAIInsights = () => {
   const d = formData[currentMode.value]
   const niche = creatorInfo.niche
 
   if (currentMode.value === 'single') {
     if (d.fiveSecRate > 60 && d.finishRate < 20) {
-      aiInsightText.value = `【跳出率警告】该作品黄金5秒极具吸引力，但整体完播率不足。说明作为${niche}博主，您的选题很好，但中后段内容拖沓或干货不足，建议精简废话，提升内容密度。`
+      aiInsightText.value = `【跳出率异常分析】该作品前5秒具备高留存特征，但整体完播率处于低位。结合 ${niche} 赛道特性，建议审查视频中后段内容密度，减少非必要冗余以提升整体播放深度。`
     } else if (d.fiveSecRate < 30 && d.finishRate > 40) {
-      aiInsightText.value = `【慢热型佳作】开头流失严重，但留下来的观众几乎都看完了。建议优化前3秒的话术和画面冲击力，一旦流量漏斗打开，这将是一个超级爆款。`
+      aiInsightText.value = `【长尾留存特征】视频初期跳出率较高，但核心受众留存情况良好。建议针对前3秒引入核心钩子，优化信息前置逻辑，有望扩大整体流量池开口。`
     } else if (d.saves > d.likes) {
-      aiInsightText.value = `【超强商业变现基因】作为${niche}赛道，该作品的“收藏”远超“点赞”，说明具有极强的“实用/种草”属性。这正是品牌方最看重的带货潜力，建议截图发给您的商务媒介！`
+      aiInsightText.value = `【商业转化潜力】在 ${niche} 维度下，该作品表现出“收藏量高于点赞量”的强实用属性特征，具备优质的种草转化能力，建议作为商业合作的核心案例展示。`
     } else {
-      aiInsightText.value = `【健康平稳】各项互动指标均衡，展现了${niche}博主稳定的内容控盘能力，适合继续沿用该内容框架。`
+      aiInsightText.value = `【各项指标稳定】互动指标分布均衡，体现了在 ${niche} 领域内成熟的内容控盘能力。`
     }
   } else if (currentMode.value === 'account') {
     const isMaleHeavy = d.femaleRatio < 50
     const genderTarget = isMaleHeavy ? '男性' : '女性'
-    const power = d.tier1Ratio > 60 ? '极强' : '大众'
-    aiInsightText.value = `【受众含金量评估】当前账号呈现典型的“${genderTarget}主导”特征，且一二线城市占比达到 ${d.tier1Ratio}%（购买力${power}）。对于${niche}赛道而言，您可以重点去接洽【${isMaleHeavy ? '汽车/数码/游戏' : '美妆/母婴/轻奢'}】类别的品牌广告，转化溢价极高。`
+    const power = d.tier1Ratio > 60 ? '较高' : '大众'
+    aiInsightText.value = `【用户画像特征分析】当前客群呈现明显的 ${genderTarget} 主导结构，一二线城市占比达 ${d.tier1Ratio}%。基于 ${niche} 赛道属性及客群购买力评估（评估等级：${power}），建议拓展 ${isMaleHeavy ? '3C数码/汽车/游戏' : '美妆/母婴/轻奢'} 相关的高净值商业接洽。`
   } else if (currentMode.value === 'commercial') {
     const roiVal = (d.targetViews * (d.ctr/100) * 0.02 * d.aov) / ((d.targetViews/1000)*d.baseCpm)
     if (roiVal > 5) {
-      aiInsightText.value = `【王炸级转化潜力】推算结果显示，品牌方投您的 ROI 预估高达 1:${roiVal.toFixed(1)}！作为${niche}博主，这种数据极具统治力，建议在谈判时强硬要求增加“CPS分成”条款。`
+      aiInsightText.value = `【高 ROI 转化预估】系统推演显示，该商业计划预期 ROI 高达 1:${roiVal.toFixed(1)}。结合 ${niche} 赛道流量分发机制，转化率处于行业头部区间，建议在合作谈判中引入阶梯式 CPS 抽成协议。`
     } else {
-      aiInsightText.value = `【稳健的曝光价值】本次合作主要为品牌方提供海量曝光。针对${niche}赛道客单价 ${d.aov}元 的产品，此报价不仅保本，还能通过您的长尾流量持续渗透品牌心智。`
+      aiInsightText.value = `【长效曝光价值评估】本次商业方案侧重于品牌曝光度建设。针对客单价为 ${d.aov} 元的 SKU，当前报价策略稳健，符合 ${niche} 赛道的标准市场定价逻辑。`
     }
   }
 }
 
+// 报告生成主线逻辑与参数校验
 const generateReport = async () => {
-  // 简单校验
   const currentData = formData[currentMode.value]
   const hasEmpty = Object.values(currentData).some(v => v === null)
-  if (hasEmpty) { ElMessage.warning('请先填写完整数据，或使用右上角的【参考模板】一键填充'); return }
+  if (hasEmpty) { ElMessage.warning('检测到空值项，请完善表单参数或应用参考模板'); return }
 
   dataDialogVisible.value = false
   currentStep.value = 'report'
   const now = new Date()
   currentTime.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
   
-  // 触发智能诊断引擎
   generateAIInsights()
   
+  // 利用 nextTick 确保 DOM 更新完毕后进行 ECharts 实例化
   await nextTick()
   if (currentMode.value === 'single') initSingleCharts()
   else if (currentMode.value === 'account') initAccountCharts()
   else if (currentMode.value === 'commercial') initCommercialCharts()
 }
 
+// 基于 html2canvas 的节点快照导出逻辑
 const exportToImage = async () => {
   isExporting.value = true
   try {
@@ -344,10 +347,10 @@ const exportToImage = async () => {
     link.href = canvas.toDataURL('image/png')
     link.download = `${creatorInfo.name}_商业图谱_${currentMode.value}.png`
     link.click()
-  } catch (error) { ElMessage.error('导出失败') } finally { isExporting.value = false }
+  } catch (error) { ElMessage.error('导出任务异常中止') } finally { isExporting.value = false }
 }
 
-// ================= ECharts 渲染逻辑 (兼容 null 数据保护) =================
+// 图表渲染模块：单篇数据分析
 const initSingleCharts = () => {
   const d = formData.single
   const retentionChart = echarts.init(document.getElementById('chart-retention'))
@@ -370,6 +373,7 @@ const initSingleCharts = () => {
   window.addEventListener('resize', () => { retentionChart.resize(); radarChart.resize(); roseChart.resize() })
 }
 
+// 图表渲染模块：账号基本盘分析
 const initAccountCharts = () => {
   const d = formData.account
   const maleRatio = 100 - d.femaleRatio
@@ -394,12 +398,13 @@ const initAccountCharts = () => {
   window.addEventListener('resize', () => { audienceChart.resize(); stChart.resize() })
 }
 
+// 图表渲染模块：商业转化测算
 const initCommercialCharts = () => {
   const d = formData.commercial
   const clk = Math.floor(d.targetViews * (d.ctr / 100)); const ord = Math.floor(clk * 0.02); const gmv = ord * d.aov
   
   const roiChart = echarts.init(document.getElementById('chart-roi'))
-  roiChart.setOption({ tooltip: { trigger: 'item' }, series: [{ type: 'funnel', sort: 'descending', label: { show: true, position: 'inside', formatter: '{b}\n{c}' }, data: [{ value: d.targetViews, name: '总曝光' }, { value: clk, name: '点击' }, { value: ord, name: '成交' }, { value: gmv, name: '创造 GMV (¥)' }] }] })
+  roiChart.setOption({ tooltip: { trigger: 'item' }, series: [{ type: 'funnel', sort: 'descending', label: { show: true, position: 'inside', formatter: '{b}\n{c}' }, data: [{ value: d.targetViews, name: '总曝光' }, { value: clk, name: '点击' }, { value: ord, name: '成交' }, { value: gmv, name: 'GMV预估 (¥)' }] }] })
   
   const bq = Math.floor((d.targetViews / 1000) * d.baseCpm); const pq = Math.floor(gmv * 0.1)
   const priceChart = echarts.init(document.getElementById('chart-price'))
@@ -412,7 +417,7 @@ const initCommercialCharts = () => {
 <style scoped>
 .saas-container { min-height: 100vh; background: #f5f7fa; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 
-/* 迎新与主页样式 */
+/* 引导页与首页样式 */
 .step-onboarding { display: flex; justify-content: center; align-items: center; height: 90vh; }
 .welcome-card { background: #fff; padding: 50px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); text-align: center; max-width: 500px; width: 100%; }
 .welcome-card .title { color: #2d3748; font-size: 2rem; margin-bottom: 10px; }
@@ -431,7 +436,7 @@ const initCommercialCharts = () => {
 .feature-card h3 { color: #2d3748; margin-bottom: 10px; font-size: 1.2rem; }
 .feature-card p { color: #a0aec0; font-size: 0.9rem; line-height: 1.5; }
 
-/* 报告页样式 */
+/* 报告展示区域样式 */
 .report-grid { max-width: 1200px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
 .report-header { text-align: center; margin-bottom: 30px; position: relative; }
 .back-btn { position: absolute; left: 0; top: 0; }
@@ -446,10 +451,33 @@ const initCommercialCharts = () => {
 
 .report-footer { margin-top: 40px; padding-top: 20px; border-top: 1px dashed #e2e8f0; text-align: center; color: #a0aec0; font-size: 0.85rem; }
 
-/* 弹窗中的预设区域 */
+/* 弹窗及快捷预设区样式 */
 .preset-area { background: #f4f4f5; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;}
 
 .bottom-action-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05); padding: 15px 0; z-index: 1000; display: none; }
 :deep(.el-form-item__label) { font-weight: 600; color: #4a5568; }
 :deep(.el-divider__text) { font-weight: bold; color: #2b6cb0; background-color: #fff; padding: 0 15px;}
+
+/* 移动端响应式适配：修复卡片排列与间距问题 */
+@media (max-width: 768px) {
+  .feature-cards {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    margin-top: 20px !important;
+  }
+  
+  .feature-cards .el-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important; 
+  }
+
+  .feature-card {
+    height: auto !important;
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+  }
+}
 </style>
